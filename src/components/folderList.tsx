@@ -11,6 +11,7 @@ const Title = styled.h2`
   line-height: 28px;
   color: #FFFFFF;
   margin-bottom: 1.25rem;
+  text-transform: capitalize;
 `
 const Content = styled.div`
   flex: 1;
@@ -123,10 +124,6 @@ function FolderList({
   </Main>
     )
 }
-
-{/* <FolderWrapper>
-<Empty>No folder selected</Empty>
-</FolderWrapper> */}
 
 
 export default FolderList

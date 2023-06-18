@@ -71,6 +71,13 @@ const ListWrapper = styled.div`
     && .nav{
         padding: 0 !important;
     }
+    && button{
+        margin-left: auto;
+        display: none;
+    }
+    && .nav:hover button{
+        display: block;
+    }
 `
 function Aside() {
     const [folders, setFolders] =  useState<any[] | null >([])
@@ -91,7 +98,13 @@ function Aside() {
     }
 
     async function fetchRecents(){
-        const {data} = await supabase.from('notes').select().order('created_at', { ascending: false }).limit(3).eq('user_id', id)
+        const {data} = await supabase.from('notes')
+            .select()
+            .order('created_at', { ascending: false })
+            .limit(3)
+            .eq('user_id', id)
+            .neq('is_archived', true)
+            .neq('is_trashed', true)
         return data;
     }
 
@@ -202,7 +215,7 @@ function Aside() {
                                         backgroundColor: isActive ? "rgba(255, 255, 255, 0.03)" : "",
                                     };
                                 }}
-                                >
+                            >
                                 <Folder />
                                 {item.folder}
                             </NavLink>
@@ -221,20 +234,31 @@ function Aside() {
             <ListWrapper>
                 <h4 className="title">More</h4>
                 <ul>
-                    <ItemsWithIcon title="Favorites" Icon={Favorites} />
-                    <ItemsWithIcon title="Trash" Icon={Trash} />
-                    <ItemsWithIcon title="Archived Notes" Icon={Archived} />
+                    <ItemsWithIcon to='favorites' title="Favorites" Icon={Favorites} />
+                    <ItemsWithIcon to='trash' title="Trash" Icon={Trash} />
+                    <ItemsWithIcon to='archived' title="Archived Notes" Icon={Archived} />
                 </ul>
             </ListWrapper>
         </SideBar>
     )
 }
 
-function ItemsWithIcon(props: {Icon: any; title: string}){
-    return <li>
-        <props.Icon />
-        <span>{props.title}</span>
+function ItemsWithIcon({Icon, title, to}: {Icon: any; title: string, to: string}){
+    return(
+    <li className='nav'>
+        <NavLink
+            to={"/" + to}
+            style={({ isActive }) => {
+                return {
+                    backgroundColor: isActive ? "rgba(255, 255, 255, 0.03)" : "",
+                };
+            }}
+        >
+            <Icon />
+            <span>{title}</span>
+        </NavLink>
     </li>
+    )
 }
 
 export default Aside
