@@ -21,7 +21,7 @@ const Header = styled.header`
 `
 const NewNote = styled.div`
     padding: 0 1.25rem;
-    && button {
+    && button, div {
         display: block;
         width: 100%;
         max-width: 100%;
@@ -37,6 +37,10 @@ const NewNote = styled.div`
         background: rgba(255, 255, 255, 0.05);
         border-radius: 3px;
         border: none;
+    }
+    div{
+        gap: 0.5rem;
+        opacity: 0.6;
     }
 `
 const ListWrapper = styled.div`
@@ -79,29 +83,53 @@ const ListWrapper = styled.div`
         display: block;
     }
 `
+
+const NotificationWrapper = styled.div`
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    z-index: 100;
+    padding: 0.25rem;
+    pointer-events: none;
+
+    && div{
+        color: #FFF;
+        background-color: rgb(34 197 94);
+        width: fit-content;
+        padding: 0.5rem 2rem;
+        margin: 0 auto;
+    }
+`
+
 function Aside() {
     const [folders, setFolders] =  useState<any[] | null >([])
-    const {id} = useLoaderData();
+    const id = useLoaderData();
     const params = useParams()
     const newWrapper = useRef<HTMLInputElement | null>(null)
     const newFolderEdit = useRef<HTMLInputElement | null>(null)
     const {data: recents} = useQuery(['recents'], fetchRecents)
     const navigation = useNavigate()
+    const [searchInput, setSearchInput] = useState<string>('')
+    const [showCreate, setShowCreate] = useState<boolean>(true)
+    const search = useRef<HTMLInputElement | null>(null)
     
     useEffect(()=>{
-        fetchFolders(id)
+        fetchFolders()
     },[])
     
-    async function fetchFolders(id: string){
-        const {data} = await supabase.from('folders').select().eq('user_id', id)
+    async function fetchFolders(){
+        const {data} = await supabase.from('folders')
+            .select()
+            .order('id', {ascending: false})
+            .eq('user_id', id)
         setFolders(data)
     }
-
+    
     async function fetchRecents(){
         const {data} = await supabase.from('notes')
             .select()
             .order('created_at', { ascending: false })
-            .limit(3)
             .eq('user_id', id)
             .neq('is_archived', true)
             .neq('is_trashed', true)
@@ -120,13 +148,12 @@ function Aside() {
     }
 
     async function createFolder(title: string){
-        const {data, error} = await supabase.from('folders').insert({
+        const {data} = await supabase.from('folders').insert({
                 id: new Date().getTime(),
                 folder: title,
                 user_id: id,
             })
             .select();
-        console.log(data, error)
         setFolders([...(folders || []), data![0]]);
     }
     
@@ -136,7 +163,6 @@ function Aside() {
             return;
         }
         const title = `Untitled Notes`
-
         const {data, error} = await supabase.from('notes').insert<INotes>({
                 id: new Date().getDate(),
                 title,
@@ -149,42 +175,82 @@ function Aside() {
                 user_id: id
             })
             .select()
-        console.log(data, error);
         if(error) return;
         navigation(`/${data[0].folder}/${data[0].slug}`)
     }
 
+    const filterItem = (item: {title: string}) => {
+        return item.title.toLocaleLowerCase().includes(searchInput.toLocaleLowerCase())
+    }
+
+    const filterFolder = (item: {folder: string}) => {
+        return item.folder.toLocaleLowerCase().includes(searchInput.toLocaleLowerCase())
+    }
+
+    useEffect(()=>{
+        if(!showCreate){
+            search.current && search.current.focus()
+        }
+    },[showCreate])
+
+    const closeSearch = () => {
+        setSearchInput('');
+        setShowCreate(true)
+    }
+
     return (
         <SideBar>
+            <NotificationWrapper>
+                {/* <div>Note Moved To Trash</div> */}
+            </NotificationWrapper>
             <Header>
                 <img src={logo} alt="" height={38} />
-                <Search />
+                <button onClick={()=>setShowCreate(false)}>
+                    <Search/>
+                </button>
             </Header>
             <NewNote>
-                <button onClick={createNote}>
+                {showCreate ? <button onClick={createNote}>
                     <AddIcon />
                     New Note
-                </button>
+                </button> :
+                <div>
+                    <label htmlFor="search">
+                        <Search />
+                    </label>
+                    <input 
+                        type="text" 
+                        id='search'
+                        ref={search}
+                        value={searchInput}
+                        onChange={(e)=>setSearchInput(e.target.value)}
+                        onBlur={closeSearch}
+                    />
+                </div>}
             </NewNote>
             <ListWrapper>
                 <h4 className='title'>Recents</h4>
-                {recents ? <ul>
-                    {recents.map(item => {
-                        return <li style={{}} className='nav' key={item.note_id}>
-                            <NavLink
-                                to={`/${item.folder}/${item.slug}`}
-                                style={({ isActive }) => {
-                                    return {
-                                        backgroundColor: isActive ? "rgba(49, 46, 181, 1)" : "",
-                                        color: isActive ? "#FFF" : "",
-                                    };
-                                }}
-                                >
-                                <Document />
-                                {item.title}
-                            </NavLink>
-                        </li>
-                    })
+                {recents?.length ? <ul>
+                    {recents.filter(filterItem).length ?
+                    recents.filter(filterItem)
+                        .map((item, index) => {
+                        if(index < 3){
+                            return <li style={{}} className='nav' key={item.note_id}>
+                                <NavLink
+                                    to={`/${item.folder}/${item.slug}`}
+                                    style={({ isActive }) => {
+                                        return {
+                                            backgroundColor: isActive ? "rgba(49, 46, 181, 1)" : "",
+                                            color: isActive ? "#FFF" : "",
+                                        };
+                                    }}
+                                    >
+                                    <Document />
+                                    {item.title}
+                                </NavLink>
+                            </li>
+                        }
+                    }):<p className='empty'>No Item Match</p>
 
                     }
                 </ul>:
@@ -206,7 +272,8 @@ function Aside() {
                     />
                 </div>
                 {folders?.length ? (<ul>
-                    {folders.sort((a, b) => b.id - a.id).map((item) => {
+                    {folders.filter(filterFolder).length ? 
+                    folders.filter(filterFolder).map((item) => {
                         return <li className='nav' key={item.id}>
                             <NavLink
                                 to={`/${item.id}`}
@@ -219,13 +286,8 @@ function Aside() {
                                 <Folder />
                                 {item.folder}
                             </NavLink>
-                            {/* <Folder />
-                            <Link to={`/${item.id}`}>
-                                
-                            </Link> */}
-                            {/* <input type="text" value={item.folder} /> */}
                         </li>
-                    })
+                    }): <p className="empty">No Item Match</p>
                     }
                 </ul>) : <p className="empty">No Folder Created</p>
 

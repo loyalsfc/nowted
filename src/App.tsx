@@ -4,7 +4,6 @@ import Login from './pages/login'
 import UserContextProvider from '../context'
 import { supabase } from '../config'
 import Folders from './pages/folders'
-import Edit from './pages/edit'
 import { QueryClient, QueryClientProvider } from 'react-query'
 
 const loader = async () => {
@@ -12,7 +11,7 @@ const loader = async () => {
   if (!data?.session?.user) {
     return redirect("/login");
   }
-  return data?.session?.user ?? null;
+  return data?.session?.user.id ?? null;
 }
 
 const router = createBrowserRouter([
@@ -32,7 +31,7 @@ const router = createBrowserRouter([
       children: [
         {
           path: '/:id/:slug',
-          element: <Edit />
+          element: <></>
         },
       ]
     }

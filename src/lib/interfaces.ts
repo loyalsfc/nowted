@@ -7,7 +7,7 @@ export interface INotes {
     is_favorite: boolean;
     is_trashed: boolean;
     is_archived: boolean;
-    user_id: string
+    user_id: string | unknown
 }
 
 export interface INotesDisplay {

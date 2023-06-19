@@ -2,12 +2,14 @@ import { useParams } from "react-router-dom"
 import { supabase } from "../../config"
 import { useQuery } from "react-query"
 import FolderList from "../components/folderList"
-import { useCallback } from "react";
+import { useCallback, useContext } from "react";
+import { UserContext } from "../../context";
 
 function Folders() {
   const {id, slug} = useParams();
   const {data: notes, isLoading, refetch} = useQuery(['notes', id, slug], fetchFiles)
   const {data: folder, isLoading: isFolderLoading} = useQuery(['folder', id], fetchFolder)
+  const userId = useContext(UserContext)
 
   async function fetchFiles(){
     if(id == "favorites"){
@@ -15,18 +17,20 @@ function Folders() {
     } else if(id === "archived"){
       const {data} = await supabase.from('notes')
         .select()
+        .eq('user_id', userId)
         .eq('is_archived', true)
         .neq('is_trashed', true)
       return data
     } else if(id === "trash"){
       const {data} = await supabase.from('notes')
         .select()
+        .eq('user_id', userId)
         .eq('is_trashed', true)
       return data
     }
     return queryDB('folder', id)
   }
-
+  
   async function fetchFolder(){
     if(id === "archived" || id === "trash" || id === "favorites"){
       return id;
@@ -38,6 +42,7 @@ function Folders() {
   async function queryDB(filterKey: string, filterValue: string | undefined | boolean){
     const {data} = await supabase.from('notes')
       .select()
+      .eq('user_id', userId)
       .eq(filterKey, filterValue)
       .neq('is_trashed', true)
       .neq('is_archived', true);

@@ -84,6 +84,7 @@ function FolderList({
         slug: string | undefined;
         id: string | undefined ;
     }) {
+      
     return (
         <Main>
       <Aside />

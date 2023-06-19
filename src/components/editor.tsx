@@ -127,6 +127,25 @@ const  modules  = {
     ],
 };
 
+const NotificationWrapper = styled.div`
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    z-index: 100;
+    padding: 0.25rem;
+    pointer-events: none;
+
+    && div{
+        color: #FFF;
+        background-color: rgb(34 197 94);
+        width: fit-content;
+        padding: 0.5rem 2rem;
+        margin: 0 auto;
+        margin-bottom: 0.5rem;
+    }
+`
+
 function Editor({slug}: {slug:string;}) {
     const {data: note, isLoading, refetch} = useQuery(['notes', slug], fetchNotes);
     
@@ -135,7 +154,8 @@ function Editor({slug}: {slug:string;}) {
     const [showModal, setShowModal] = useState<boolean>(false)
     const [showDeleteModal, setShowDeleteModal] = useState<boolean>(false)
     const modalRef = useRef(null);
-    const buttonRef = useRef(null)
+    const buttonRef = useRef(null);
+    const notification = useRef(null)
     const navigate = useNavigate()
     
     useEffect(()=>{
@@ -167,48 +187,72 @@ function Editor({slug}: {slug:string;}) {
     }
 
     const {created_at, folder, folders, is_archived, is_trashed, is_favorite, note_id} = note
-    console.log(note)
+    
     const updateNote = async(updateItem: {}) => {
-        const {data, error} = await supabase.from('notes').update(updateItem).eq('slug', slug);
+        await supabase.from('notes').update(updateItem).eq('slug', slug);
         refetch();
-        console.log(data, error)
     }
 
     const updateTitle = async(e: React.ChangeEvent<HTMLInputElement>) => {
         const newTitle = e.target.value
         if(newTitle === title) return;
         const newSlug = createSlug(newTitle)
-        const {data, error} = await supabase.from('notes')
+        await supabase.from('notes')
             .update({title: newTitle, slug: newSlug})
             .eq('slug', slug);
-        console.log(data, error)
+            showNotification('Title Updated')
         navigate(`/${folder}/${newSlug}`);
     }
 
     const trashItem = async(): Promise<void> =>{
         updateNote({is_trashed: true})
+        showNotification('Note Restored from Trash');
         navigate(`/${folder}`);
     }
 
     const restoreTrash = () => {
         updateNote({is_trashed: false})
         setShowModal(false);
+        showNotification('Note Restored from Trash')
         navigate(`/${folder}/${slug}`);
     }
 
     const deleteNote = async() => {
         await supabase.from('notes').delete().eq('note_id', note_id);
+        showNotification('Note deleted permanently')
         navigate(`/trash`);
     }
 
     const archived = () => {
         if(is_archived){
             updateNote({is_archived: false});
+            showNotification('Note Unarchived')
             navigate(`/${folder}/${slug}`);
             return;
         }
         updateNote({is_archived: true});
+        showNotification('Note Moved to Archive')
         navigate(`/${folder}`);
+        return;
+    }
+
+    const showNotification = (title: string) => {
+        const container: HTMLDivElement = document.createElement('div');
+        container.textContent = title;
+        notification.current && notification.current.append(container)
+        setTimeout(()=>{
+            container.remove();
+        },3000)
+    }
+
+    const toggleFavorite = async() => {
+        if(is_favorite){
+            await updateNote({is_favorite: false})
+            showNotification('Note Removed from Favorites')
+            return;
+        }
+        await updateNote({is_favorite: true})
+        showNotification('Note added to Favorites')
         return;
     }
 
@@ -221,6 +265,7 @@ function Editor({slug}: {slug:string;}) {
                 <button onClick={()=>setShowDeleteModal(false)}>No</button>
             </div>
         </ConfirmModal>}
+        <NotificationWrapper ref={notification}></NotificationWrapper>
         <Section>
             <Header>
                 <TitleBox disabled={is_trashed ? true : false} defaultValue={title} onBlur={updateTitle}/>
@@ -238,7 +283,7 @@ function Editor({slug}: {slug:string;}) {
                             </li>
                         </ul>
                     ):(<ul>
-                        {!is_archived && <li onClick={()=>updateNote({is_favorite: !is_favorite})}>
+                        {!is_archived && <li onClick={toggleFavorite}>
                             {is_favorite ? <FavoritesFilled /> : <Favorites/>} {is_favorite ? 'Remove' : 'Add to'} favorites
                         </li>}
                         <li onClick={archived}>
