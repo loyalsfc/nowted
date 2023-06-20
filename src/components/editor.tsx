@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { Section } from './styling/styles'
+import { ReturnPage, Section } from './styling/styles'
 import { styled } from 'styled-components'
 import { Archived, Calender, Ellipsis, Favorites, FavoritesFilled, Folder, RedTrash, Trash } from './styling/icons'
 import ReactQuill from 'react-quill'
@@ -7,7 +7,7 @@ import {useQuery} from 'react-query'
 import 'react-quill/dist/quill.snow.css';
 import { supabase } from '../../config'
 import { createSlug } from '../utils/utils'
-import { useNavigate } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import EmptyPage from './empty'
 
 
@@ -146,7 +146,7 @@ const NotificationWrapper = styled.div`
     }
 `
 
-function Editor({slug}: {slug:string;}) {
+function Editor({slug, id}: {slug:string; id:string | undefined}) {
     const {data: note, isLoading, refetch} = useQuery(['notes', slug], fetchNotes);
     
     const [value, setValue] = useState<string>('');
@@ -267,6 +267,9 @@ function Editor({slug}: {slug:string;}) {
         </ConfirmModal>}
         <NotificationWrapper ref={notification}></NotificationWrapper>
         <Section>
+            <ReturnPage>
+                <Link to={`/${id}`}>Go Bank</Link>
+            </ReturnPage>
             <Header>
                 <TitleBox disabled={is_trashed ? true : false} defaultValue={title} onBlur={updateTitle}/>
                 <Options ref={buttonRef} onClick={()=>setShowModal(!showModal)}>

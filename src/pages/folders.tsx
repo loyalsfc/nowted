@@ -1,16 +1,15 @@
-import { useParams } from "react-router-dom"
+import { useLoaderData, useParams } from "react-router-dom"
 import { supabase } from "../../config"
 import { useQuery } from "react-query"
 import FolderList from "../components/folderList"
-import { useCallback, useContext } from "react";
-import { UserContext } from "../../context";
+import { useCallback} from "react";
 
 function Folders() {
+  const userId = useLoaderData();
   const {id, slug} = useParams();
   const {data: notes, isLoading, refetch} = useQuery(['notes', id, slug], fetchFiles)
   const {data: folder, isLoading: isFolderLoading} = useQuery(['folder', id], fetchFolder)
-  const userId = useContext(UserContext)
-
+  
   async function fetchFiles(){
     if(id == "favorites"){
       return queryDB("is_favorite", true)
@@ -27,8 +26,9 @@ function Folders() {
         .eq('user_id', userId)
         .eq('is_trashed', true)
       return data
+    } else{
+      return queryDB('folder', id)
     }
-    return queryDB('folder', id)
   }
   
   async function fetchFolder(){

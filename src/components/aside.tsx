@@ -2,16 +2,20 @@ import logo from '../assets/logo.png'
 import { styled } from 'styled-components'
 import { AddFolder, AddIcon, Archived, Document, Favorites, Folder, OpenedFolder, Search, Trash } from './styling/icons'
 import { supabase } from '../../config'
-import {useState, useEffect, useRef} from 'react'
-import {NavLink, useLoaderData, useNavigate, useParams} from 'react-router-dom'
+import {useState, useEffect, useRef, useMemo} from 'react'
+import {Link, NavLink, useLoaderData, useNavigate, useParams} from 'react-router-dom'
 import { INotes } from '../lib/interfaces'
 import { createSlug } from '../utils/utils'
 import { useQuery } from 'react-query'
 
 const SideBar = styled.aside`
-    width: 300px;
+    width: 100%;
     height: 100vh;
     overflow: scroll;
+
+    @media (min-width: 756px){
+        width: 300px;
+    }
 `
 const Header = styled.header`
     display: flex;
@@ -84,24 +88,6 @@ const ListWrapper = styled.div`
     }
 `
 
-const NotificationWrapper = styled.div`
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    z-index: 100;
-    padding: 0.25rem;
-    pointer-events: none;
-
-    && div{
-        color: #FFF;
-        background-color: rgb(34 197 94);
-        width: fit-content;
-        padding: 0.5rem 2rem;
-        margin: 0 auto;
-    }
-`
-
 function Aside() {
     const [folders, setFolders] =  useState<any[] | null >([])
     const id = useLoaderData();
@@ -162,13 +148,14 @@ function Aside() {
             alert('Please select a folder first');
             return;
         }
-        const title = `Untitled Notes`
+        const random: number = Math.floor(Math.random()*(999-100+1)+100);
+        const title: string = `Untitled Notes`
         const {data, error} = await supabase.from('notes').insert<INotes>({
                 id: new Date().getDate(),
                 title,
                 notes: '',
                 folder: parseInt(params.id), 
-                slug: createSlug(title),
+                slug: createSlug(title + random),
                 is_favorite: false,
                 is_trashed: false,
                 is_archived: false,
@@ -193,18 +180,17 @@ function Aside() {
         }
     },[showCreate])
 
-    const closeSearch = () => {
+    useMemo(() => {
         setSearchInput('');
         setShowCreate(true)
-    }
+    }, [params])
 
     return (
         <SideBar>
-            <NotificationWrapper>
-                {/* <div>Note Moved To Trash</div> */}
-            </NotificationWrapper>
             <Header>
-                <img src={logo} alt="" height={38} />
+                <Link to="/">
+                    <img src={logo} alt="" height={38} />
+                </Link>
                 <button onClick={()=>setShowCreate(false)}>
                     <Search/>
                 </button>
@@ -224,7 +210,6 @@ function Aside() {
                         ref={search}
                         value={searchInput}
                         onChange={(e)=>setSearchInput(e.target.value)}
-                        onBlur={closeSearch}
                     />
                 </div>}
             </NewNote>

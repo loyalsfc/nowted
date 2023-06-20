@@ -1,7 +1,7 @@
 import { styled } from "styled-components"
 import Aside from "../components/aside"
 import EmptyPage from "../components/empty"
-import { Empty, FolderWrapper, Main } from "../components/styling/styles"
+import { Empty, FolderWrapper, Main, ReturnPage, Wrapper } from "../components/styling/styles"
 import { Link } from "react-router-dom"
 import Editor from "../components/editor"
 
@@ -69,6 +69,14 @@ const TitleLoading = styled.p`
   width: 100px;
 `
 
+const NewFolderWrapper = styled(FolderWrapper)< {$slug?: any}>`
+  display: ${props => props.$slug ? "none" : "flex"};
+
+  @media (min-width: 756px) {
+    display: flex;
+  }
+`
+
 function FolderList({
         isFolderLoading,
         folder,
@@ -86,9 +94,14 @@ function FolderList({
     }) {
       
     return (
-        <Main>
-      <Aside />
-      <FolderWrapper>
+      <Main>
+      <Wrapper>
+        <Aside />
+      </Wrapper>
+      <NewFolderWrapper $slug={slug}>
+      <ReturnPage>
+        <Link to='/'>Go Bank</Link>
+      </ReturnPage>
         <Title>{isFolderLoading ? <TitleLoading className="loader"></TitleLoading> : folder}</Title>
         <Content>
           {notes?.length && !isLoading && !isFolderLoading ? (
@@ -120,8 +133,8 @@ function FolderList({
           </CardWrapper>:<Empty>This Folder is Empty</Empty>
           )}
         </Content>
-      </FolderWrapper>
-      {slug ? <Editor slug={slug} /> : <EmptyPage />}
+      </NewFolderWrapper>
+      {slug ? <Editor slug={slug} id={id} /> : <EmptyPage />}
   </Main>
     )
 }
