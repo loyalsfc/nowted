@@ -153,9 +153,9 @@ function Editor({slug, id}: {slug:string; id:string | undefined}) {
     const [title, setTitle] = useState<string>('');
     const [showModal, setShowModal] = useState<boolean>(false)
     const [showDeleteModal, setShowDeleteModal] = useState<boolean>(false)
-    const modalRef = useRef(null);
-    const buttonRef = useRef(null);
-    const notification = useRef(null)
+    const modalRef = useRef<HTMLDivElement>(null);
+    const buttonRef = useRef<HTMLButtonElement>(null);
+    const notification = useRef<HTMLDivElement>(null)
     const navigate = useNavigate()
     
     useEffect(()=>{
@@ -165,7 +165,7 @@ function Editor({slug, id}: {slug:string; id:string | undefined}) {
 
     useEffect(()=>{
         const handleOutsideClick = (event: MouseEvent) => {
-            if(modalRef.current && !modalRef.current.contains(event.target) && !buttonRef.current.contains(event.target)){
+            if(modalRef.current && !modalRef.current.contains(event.target) && buttonRef.current && !buttonRef.current.contains(event.target)){
                 setShowModal(false)
             }
         }
