@@ -164,7 +164,7 @@ function Editor({slug, id}: {slug:string; id:string | undefined}) {
     },[note])
 
     useEffect(()=>{
-        const handleOutsideClick = (event: MouseEvent) => {
+        const handleOutsideClick = (event: any) => {
             if(modalRef.current && !modalRef.current.contains(event.target) && buttonRef.current && !buttonRef.current.contains(event.target)){
                 setShowModal(false)
             }
